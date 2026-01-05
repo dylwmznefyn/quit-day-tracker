@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quit Day Tracker+</title>
+  <style>
+    :root { --bg:#f6f7f9; --card:#fff; --line:#e6e6e6; --muted:#6b7280; --text:#111827; }
+    body { font-family:-apple-system, system-ui, Arial; margin:0; background:var(--bg); color:var(--text); }
+    header { padding:14px; background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10; }
+    h1 { font-size:18px; margin:0 0 8px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    button { border:1px solid #ddd; background:#fff; padding:10px 12px; border-radius:12px; cursor:pointer; }
+    button.primary { background:#111827; color:#fff; border-color:#111827; }
+    .pill { font-size:12px; padding:4px 8px; border:1px solid #e5e7eb; border-radius:999px; background:#fafafa; color:var(--muted); }
+    main { padding:14px; max-width:1100px; margin:0 auto; }
+    .grid { display:grid; grid-template-columns: 1.25fr 1fr; gap:12px; }
+    @media (max-width: 960px){ .grid{ grid-template-columns:1fr; } }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px; }
+    .card h2 { font-size:15px; margin:0 0 10px; }
+    .calHead { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
+    .monthTitle { font-weight:650; }
+    .cal { margin-top:10px; display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; }
+    .dow { font-size:12px; color:var(--muted); text-align:center; padding:2px 0 6px; }
+    .day {
+      min-height:58px; background:#fff; border:1px solid #ececec; border-radius:12px; padding:6px;
+      display:flex; flex-direction:column; gap:4px; cursor:pointer;
+    }
+    .day.other { opacity:.45; }
+    .day.selected { outline: 2px solid #111827; }
+    .num { font-size:12px; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
+    .badges { display:flex; flex-wrap:wrap; gap:4px; }
+    .badge { font-size:11px; padding:2px 6px; border-radius:999px; border:1px solid #e5e7eb; background:#fafafa; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    select, input[type="text"], input[type="time"], input[type="number"], textarea{
+      border:1px solid #ddd; border-radius:12px; padding:10px 12px; background:#fff; font-size:14px; width:100%;
+    }
+    textarea{ min-height:90px; resize:vertical; }
+    .list { display:flex; flex-wrap:wrap; gap:8px; }
+    .widgetBtn{
+      border:1px solid #e5e7eb; background:#fff; border-radius:999px; padding:10px 12px;
+      font-size:14px; cursor:pointer;
+    }
+    .widgetBtn.on{ background:#111827; border-color:#111827; color:#fff; }
+    .muted{ color:var(--muted); font-size:12px; line-height:1.35rem; }
+    .stats { display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; }
+    @media (max-width: 420px){ .stats{ grid-template-columns:1fr; } }
+    .stat { border:1px solid #eee; border-radius:14px; padding:10px; background:#fafafa; }
+    .stat .k { font-size:12px; color:var(--muted); }
+    .stat .v { font-size:18px; font-weight:700; margin-top:2px; }
+    .danger { border-color:#f3c6c6; background:#fff5f5; }
+    .banner {
+      border:1px solid #f0e3b5; background:#fff9db; border-radius:14px; padding:10px 12px; margin-bottom:10px;
+    }
+    .two { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+    @media (max-width: 520px){ .two{ grid-template-columns:1fr; } }
+    .footer { text-align:center; padding:14px 0 18px; color:var(--muted); font-size:12px; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>✅ Quit Day Tracker+</h1>
+  <div class="row">
+    <button id="prevBtn">←</button>
+    <span class="pill" id="monthPill">Month</span>
+    <button id="nextBtn">→</button>
+    <button id="todayBtn" class="primary">Today</button>
+    <button id="exportBtn">Export</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+</header>
+
+<main>
+  <div id="reminderBanner" class="banner" style="display:none;"></div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="calHead">
+        <div>
+          <div class="monthTitle" id="monthTitle">—</div>
+          <div class="muted" id="selectedTitle">Select a day</div>
+          <div class="muted" id="whyPreview" style="margin-top:6px;"></div>
+        </div>
+        <div class="controls">
+          <select id="viewSelect" title="View">
+            <option value="month">Month</option>
+            <option value="year">Year totals</option>
+          </select>
+          <select id="focusSelect" title="Focus widget"></select>
+        </div>
+      </div>
+
+      <div id="calendarWrap">
+        <div class="cal" id="calDows"></div>
+        <div class="cal" id="calendar"></div>
+      </div>
+
+      <div id="yearWrap" style="display:none; margin-top:10px;">
+        <div class="muted">Year totals (completed quit-days per widget):</div>
+        <div style="margin-top:10px;" id="yearTotals"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Selected day</h2>
+
+      <div class="muted" style="margin-bottom:10px;">
+        Tap widgets to mark a <b>completed day</b> (e.g., smoke-free / drink-free). Streaks reset if you miss a day.
+      </div>
+
+      <div class="list" id="widgetList"></div>
+
+      <div style="margin-top:12px;" class="card">
+        <h2 style="margin:0 0 8px;">Notes for this day</h2>
+        <div class="muted" style="margin-bottom:8px;">Wins, triggers, what helped, who you did it for — anything.</div>
+        <textarea id="notesBox" placeholder="Type notes…"></textarea>
+        <div class="row" style="margin-top:8px;">
+          <button id="saveNotesBtn" class="primary">Save notes</button>
+          <button id="clearNotesBtn">Clear</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;" class="card">
+        <h2 style="margin:0 0 8px;">Stats (focus widget)</h2>
+        <div class="muted" style="margin-bottom:10px;">
+          Choose a focus widget (top right) to see streak, missed days, and money saved.
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="k">Streak</div>
+            <div class="v" id="streakVal">0</div>
+          </div>
+          <div class="stat">
+            <div class="k">Missed days (since last)</div>
+            <div class="v" id="missedVal">0</div>
+          </div>
+          <div class="stat">
+            <div class="k">Completed days</div>
+            <div class="v" id="completedVal">0</div>
+          </div>
+          <div class="stat">
+            <div class="k">Money saved (est.)</div>
+            <div class="v" id="savedVal">£0</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;" class="card danger">
+        <h2 style="margin:0 0 8px;">Motivation & reminders</h2>
+
+        <div class="two">
+          <div>
+            <div class="muted" style="margin-bottom:6px;">Your “why” (shown on screen)</div>
+            <textarea id="globalWhy" placeholder="E.g., For my family, my health, my money, my peace…"></textarea>
+            <button id="saveWhyBtn" class="primary" style="margin-top:8px;">Save why</button>
+          </div>
+
+          <div>
+            <div class="muted" style="margin-bottom:6px;">Daily reminder time (in-app)</div>
+            <input id="reminderTime" type="time" />
+            <div class="muted" style="margin-top:6px;">
+              This app can’t push iPhone notifications by itself, but it will show a reminder banner when you open it after this time.
+            </div>
+            <button id="saveReminderBtn" class="primary" style="margin-top:8px;">Save reminder time</button>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid #eee; margin:14px 0;" />
+
+        <h2 style="margin:0 0 8px;">Widget settings (focus widget)</h2>
+        <div class="muted" style="margin-bottom:10px;">Set £ saved per day and an optional “why” per widget.</div>
+
+        <div class="two">
+          <div>
+            <div class="muted" style="margin-bottom:6px;">£ saved per day</div>
+            <input id="dailySave" type="number" min="0" step="0.5" placeholder="e.g., 10" />
+          </div>
+          <div>
+            <div class="muted" style="margin-bottom:6px;">Why for this widget</div>
+            <input id="widgetWhy" type="text" placeholder="e.g., Better lungs / stop chasing losses" />
+          </div>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <button id="saveWidgetSettingsBtn" class="primary">Save widget settings</button>
+        </div>
+
+        <hr style="border:none;border-top:1px solid #eee; margin:14px 0;" />
+
+        <h2 style="margin:0 0 8px;">Add a custom widget</h2>
+        <div class="row">
+          <input id="customInput" type="text" placeholder="e.g., No scrolling after 9pm" />
+          <button id="addCustomBtn" class="primary">Add</button>
+        </div>
+      </div>
+
+      <div class="footer">
+        iPhone: open in Safari → Share → “Add to Home Screen” for an app icon.
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const STORAGE_KEY = "quit_day_tracker_plus_v2";
+
+  const DEFAULT_WIDGETS = [
+    "Gambling",
+    "Smoking / vaping",
+    "Alcohol",
+    "Weed / cannabis",
+    "Porn",
+    "Social media scrolling",
+    "Gaming",
+    "Takeaway / fast food",
+    "Sugar / sweets",
+    "Energy drinks",
+    "Impulse spending",
+    "Procrastination"
+  ];
+
+  const DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+  function isoDate(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const day = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${day}`;
+  }
+  function parseIso(s){
+    const [y,m,d] = s.split("-").map(Number);
+    return new Date(y, m-1, d);
+  }
+  function formatMoneyGBP(n){
+    const v = Math.round((Number(n)||0)*100)/100;
+    return "£" + v.toLocaleString(undefined, { minimumFractionDigits: v%1?2:0, maximumFractionDigits:2 });
+  }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw){
+        const now = new Date();
+        return {
+          widgets:[...DEFAULT_WIDGETS],
+          marks:{},           // { "YYYY-MM-DD": ["Smoking", ...] }
+          notes:{},           // { "YYYY-MM-DD": "text" }
+          selected: isoDate(now),
+          monthAnchor: isoDate(now),
+          view:"month",
+          focus: DEFAULT_WIDGETS[0],
+          settings: {
+            globalWhy: "",
+            reminderTime: "20:00",
+            perWidget: {}     // { widgetName: { dailySave: number, why: string } }
+          }
+        };
+      }
+      const st = JSON.parse(raw);
+      st.widgets = Array.isArray(st.widgets) && st.widgets.length ? st.widgets : [...DEFAULT_WIDGETS];
+      st.marks = st.marks || {};
+      st.notes = st.notes || {};
+      st.selected = st.selected || isoDate(new Date());
+      st.monthAnchor = st.monthAnchor || isoDate(new Date());
+      st.view = st.view || "month";
+      st.focus = st.focus || st.widgets[0];
+      st.settings = st.settings || { globalWhy:"", reminderTime:"20:00", perWidget:{} };
+      st.settings.perWidget = st.settings.perWidget || {};
+      return st;
+    }catch{
+      const now = new Date();
+      return {
+        widgets:[...DEFAULT_WIDGETS], marks:{}, notes:{},
+        selected: isoDate(now), monthAnchor: isoDate(now),
+        view:"month", focus: DEFAULT_WIDGETS[0],
+        settings:{ globalWhy:"", reminderTime:"20:00", perWidget:{} }
+      };
+    }
+  }
+  function saveState(st){ localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); }
+
+  function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+  function endOfMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+
+  // Calendar grid Monday-first
+  function calendarCells(anchorDate){
+    const first = startOfMonth(anchorDate);
+    const firstDow = (first.getDay() + 6) % 7; // Mon=0..Sun=6
+    const cells = [];
+    const start = new Date(first);
+    start.setDate(first.getDate() - firstDow);
+    for(let i=0;i<42;i++){
+      const d = new Date(start);
+      d.setDate(start.getDate()+i);
+      cells.push({ date:d, iso:isoDate(d), inMonth: d.getMonth() === anchorDate.getMonth() });
+    }
+    return { cells };
+  }
+
+  function monthLabel(d){
+    return d.toLocaleString(undefined, { month:"long", year:"numeric" });
+  }
+
+  function getMarksForDay(st, iso){
+    return Array.isArray(st.marks[iso]) ? st.marks[iso] : [];
+  }
+
+  function toggleMark(st, iso, widget){
+    const set = new Set(getMarksForDay(st, iso));
+    if(set.has(widget)) set.delete(widget);
+    else set.add(widget);
+    st.marks[iso] = Array.from(set);
+  }
+
+  function dayHasWidget(st, iso, widget){
+    return getMarksForDay(st, iso).includes(widget);
+  }
+
+  function completedDaysForWidget(st, widget){
+    const days = [];
+    for(const [day, arr] of Object.entries(st.marks)){
+      if(Array.isArray(arr) && arr.includes(widget)) days.push(day);
+    }
+    return days.sort();
+  }
+
+  // Streak ending today if today is marked, otherwise 0.
+  // Miss a day -> streak breaks -> next completion becomes streak 1.
+  function streakForWidget(st, widget){
+    const today = isoDate(new Date());
+    if(!dayHasWidget(st, today, widget)) return 0;
+
+    let streak = 0;
+    let d = parseIso(today);
+    while(true){
+      const key = isoDate(d);
+      if(dayHasWidget(st, key, widget)){
+        streak++;
+        d.setDate(d.getDate()-1);
+      }else{
+        break;
+      }
+    }
+    return streak;
+  }
+
+  // Missed days since last completed day (excluding today).
+  // If never completed -> 0.
+  function missedDaysSinceLast(st, widget){
+    const today = isoDate(new Date());
+    const days = completedDaysForWidget(st, widget);
+    if(days.length === 0) return 0;
+
+    const last = days[days.length-1]; // latest completed day
+    const lastDate = parseIso(last);
+    const todayDate = parseIso(today);
+
+    // If last is today -> missed 0
+    if(last === today) return 0;
+
+    // Count days between last+1 and today-1 that were not completed (effectively gap size)
+    // If you skipped yesterday etc, that's the gap.
+    const diffDays = Math.floor((todayDate - lastDate) / (24*3600*1000)) - 1;
+    return Math.max(0, diffDays);
+  }
+
+  function countCompleted(st, widget){
+    return completedDaysForWidget(st, widget).length;
+  }
+
+  function moneySaved(st, widget){
+    const per = st.settings.perWidget[widget] || {};
+    const daily = Number(per.dailySave) || 0;
+    return daily * countCompleted(st, widget);
+  }
+
+  function yearTotals(st, year){
+    const totals = {};
+    st.widgets.forEach(w => totals[w]=0);
+    for(const [day, arr] of Object.entries(st.marks)){
+      if(!arr || !arr.length) continue;
+      if(day.startsWith(String(year) + "-")){
+        arr.forEach(w => { if(totals[w] !== undefined) totals[w]++; });
+      }
+    }
+    return totals;
+  }
+
+  function shouldShowReminderBanner(st){
+    const t = st.settings.reminderTime;
+    if(!t) return false;
+    const [hh, mm] = t.split(":").map(Number);
+    if(Number.isNaN(hh) || Number.isNaN(mm)) return false;
+
+    const now = new Date();
+    const minsNow = now.getHours()*60 + now.getMinutes();
+    const minsSet = hh*60 + mm;
+
+    // show if it's after reminder time and today has NO widgets ticked at all
+    const today = isoDate(now);
+    const any = getMarksForDay(st, today).length > 0;
+    return minsNow >= minsSet && !any;
+  }
+
+  function render(){
+    const st = loadState();
+    const selectedIso = st.selected;
+    const selectedDate = parseIso(selectedIso);
+    const anchorDate = parseIso(st.monthAnchor);
+
+    // Reminder banner
+    const banner = document.getElementById("reminderBanner");
+    if(shouldShowReminderBanner(st)){
+      const why = (st.settings.globalWhy || "").trim();
+      banner.style.display = "block";
+      banner.innerHTML = `<b>Reminder:</b> log your day ✅${why ? `<br><span class="muted">Why: ${escapeHtml(why)}</span>` : ""}`;
+    } else {
+      banner.style.display = "none";
+      banner.innerHTML = "";
+    }
+
+    // Month header
+    document.getElementById("monthPill").textContent = monthLabel(anchorDate);
+    document.getElementById("monthTitle").textContent = monthLabel(anchorDate);
+
+    // View + focus selects
+    const viewSelect = document.getElementById("viewSelect");
+    viewSelect.value = st.view || "month";
+    const isYear = viewSelect.value === "year";
+    document.getElementById("calendarWrap").style.display = isYear ? "none" : "block";
+    document.getElementById("yearWrap").style.display = isYear ? "block" : "none";
+
+    const focusSelect = document.getElementById("focusSelect");
+    focusSelect.innerHTML = "";
+    st.widgets.forEach(w=>{
+      const opt = document.createElement("option");
+      opt.value = w;
+      opt.textContent = w;
+      focusSelect.appendChild(opt);
+    });
+    if(!st.widgets.includes(st.focus)) st.focus = st.widgets[0];
+    focusSelect.value = st.focus;
+
+    // Selected title
+    const niceSel = selectedDate.toLocaleDateString(undefined, { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+    document.getElementById("selectedTitle").textContent = `Selected: ${niceSel}`;
+
+    // Why preview
+    const focusWhy = ((st.settings.perWidget[st.focus]||{}).why || "").trim();
+    const globalWhy = (st.settings.globalWhy || "").trim();
+    const whyLine = globalWhy || focusWhy ? `Why: ${globalWhy ? escapeHtml(globalWhy) : escapeHtml(focusWhy)}` : "";
+    document.getElementById("whyPreview").innerHTML = whyLine ? whyLine : "";
+
+    // DOW labels
+    const dows = document.getElementById("calDows");
+    dows.innerHTML = "";
+    DOW.forEach(x=>{
+      const el = document.createElement("div");
+      el.className = "dow";
+      el.textContent = x;
+      dows.appendChild(el);
+    });
+
+    // Calendar
+    const cal = document.getElementById("calendar");
+    cal.innerHTML = "";
+    const { cells } = calendarCells(anchorDate);
+
+    cells.forEach(c=>{
+      const dayEl = document.createElement("div");
+      dayEl.className = "day" + (c.inMonth ? "" : " other") + (c.iso === selectedIso ? " selected" : "");
+      dayEl.addEventListener("click", ()=>{
+        const s = loadState();
+        s.selected = c.iso;
+        saveState(s);
+        render();
+      });
+
+      const top = document.createElement("div");
+      top.className = "num";
+      const marks = getMarksForDay(st,c.iso);
+      top.innerHTML = `<span>${c.date.getDate()}</span><span>${marks.length ? "✓" : ""}</span>`;
+
+      const badges = document.createElement("div");
+      badges.className = "badges";
+
+      marks.slice(0,4).forEach(m=>{
+        const b = document.createElement("div");
+        b.className = "badge";
+        b.textContent = m;
+        badges.appendChild(b);
+      });
+      if(marks.length > 4){
+        const more = document.createElement("div");
+        more.className = "badge";
+        more.textContent = `+${marks.length - 4}`;
+        badges.appendChild(more);
+      }
+
+      dayEl.appendChild(top);
+      dayEl.appendChild(badges);
+      cal.appendChild(dayEl);
+    });
+
+    // Widgets for selected day
+    const list = document.getElementById("widgetList");
+    list.innerHTML = "";
+    const selectedMarks = new Set(getMarksForDay(st, selectedIso));
+
+    st.widgets.forEach(w=>{
+      const btn = document.createElement("button");
+      btn.className = "widgetBtn" + (selectedMarks.has(w) ? " on" : "");
+      btn.textContent = w;
+      btn.addEventListener("click", ()=>{
+        const s = loadState();
+        toggleMark(s, selectedIso, w);
+        saveState(s);
+        render();
+      });
+      list.appendChild(btn);
+    });
+
+    // Notes
+    document.getElementById("notesBox").value = st.notes[selectedIso] || "";
+
+    // Settings UI fill
+    document.getElementById("globalWhy").value = st.settings.globalWhy || "";
+    document.getElementById("reminderTime").value = st.settings.reminderTime || "20:00";
+
+    const per = st.settings.perWidget[st.focus] || {};
+    document.getElementById("dailySave").value = (per.dailySave ?? "");
+    document.getElementById("widgetWhy").value = per.why || "";
+
+    // Stats for focus widget
+    document.getElementById("streakVal").textContent = String(streakForWidget(st, st.focus));
+    document.getElementById("missedVal").textContent = String(missedDaysSinceLast(st, st.focus));
+    document.getElementById("completedVal").textContent = String(countCompleted(st, st.focus));
+    document.getElementById("savedVal").textContent = formatMoneyGBP(moneySaved(st, st.focus));
+
+    // Year totals
+    if(isYear){
+      const yr = anchorDate.getFullYear();
+      const totals = yearTotals(st, yr);
+      const wrap = document.getElementById("yearTotals");
+      wrap.innerHTML = "";
+      const entries = Object.entries(totals).sort((a,b)=> b[1]-a[1]);
+      entries.forEach(([k,v])=>{
+        const row = document.createElement("div");
+        row.className = "stat";
+        row.style.marginBottom = "8px";
+        row.innerHTML = `<div class="k">${escapeHtml(k)}</div><div class="v">${v}</div>`;
+        wrap.appendChild(row);
+      });
+    }
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+
+  // Nav buttons
+  document.getElementById("prevBtn").addEventListener("click", ()=>{
+    const st = loadState();
+    const d = parseIso(st.monthAnchor);
+    d.setMonth(d.getMonth()-1);
+    st.monthAnchor = isoDate(d);
+    saveState(st);
+    render();
+  });
+  document.getElementById("nextBtn").addEventListener("click", ()=>{
+    const st = loadState();
+    const d = parseIso(st.monthAnchor);
+    d.setMonth(d.getMonth()+1);
+    st.monthAnchor = isoDate(d);
+    saveState(st);
+    render();
+  });
+  document.getElementById("todayBtn").addEventListener("click", ()=>{
+    const st = loadState();
+    const t = new Date();
+    st.selected = isoDate(t);
+    st.monthAnchor = isoDate(t);
+    saveState(st);
+    render();
+  });
+
+  document.getElementById("viewSelect").addEventListener("change", (e)=>{
+    const st = loadState();
+    st.view = e.target.value;
+    saveState(st);
+    render();
+  });
+
+  document.getElementById("focusSelect").addEventListener("change", (e)=>{
+    const st = loadState();
+    st.focus = e.target.value;
+    saveState(st);
+    render();
+  });
+
+  // Notes actions
+  document.getElementById("saveNotesBtn").addEventListener("click", ()=>{
+    const st = loadState();
+    const iso = st.selected;
+    st.notes[iso] = document.getElementById("notesBox").value || "";
+    saveState(st);
+    alert("Notes saved ✅");
+    render();
+  });
+  document.getElementById("clearNotesBtn").addEventListener("click", ()=>{
+    const st = loadState();
+    const iso = st.selected;
+    if(!confirm("Clear notes for this day?")) return;
+    delete st.notes[iso];
+    saveState(st);
+    render();
+  });
+
+  // Motivation & reminders
+  document.getElementById("saveWhyBtn").addEventListener("click", ()=>{
+    const st = loadState();
+    st.settings.globalWhy = document.getElementById("globalWhy").value || "";
+    saveState(st);
+    alert("Saved ✅");
+    render();
+  });
+
+  document.getElementById("saveReminderBtn").addEventListener("click", ()=>{
+    const st = loadState();
+    st.settings.reminderTime = document.getElementById("reminderTime").value || "20:00";
+    saveState(st);
+    alert("Reminder time saved ✅");
+    render();
+  });
+
+  // Widget settings
+  document.getElementById("saveWidgetSettingsBtn").addEventListener("click", ()=>{
+    const st = loadState();
+    const w = st.focus;
+    st.settings.perWidget[w] = st.settings.perWidget[w] || {};
+    st.settings.perWidget[w].dailySave = Number(document.getElementById("dailySave").value || 0);
+    st.settings.perWidget[w].why = document.getElementById("widgetWhy").value || "";
+    saveState(st);
+    alert("Widget settings saved ✅");
+    render();
+  });
+
+  // Custom widget
+  document.getElementById("addCustomBtn").addEventListener("click", ()=>{
+    const input = document.getElementById("customInput");
+    const name = (input.value || "").trim();
+    if(!name) return;
+    const st = loadState();
+    if(!st.widgets.includes(name)){
+      st.widgets.push(name);
+      if(!st.focus) st.focus = name;
+      saveState(st);
+    }
+    input.value = "";
+    render();
+  });
+
+  // Export / reset
+  document.getElementById("exportBtn").addEventListener("click", async ()=>{
+    const st = loadState();
+    const blob = new Blob([JSON.stringify(st, null, 2)], { type:"application/json" });
+    const file = new File([blob], "quit-day-tracker-export.json", { type:"application/json" });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: "Quit Day Tracker Export" });
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "quit-day-tracker-export.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      alert("Exported. If the download didn’t appear, try again from Safari (not in-app browsers).");
+    }
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", ()=>{
+    if(!confirm("Reset everything? This clears ticks, notes, and settings.")) return;
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  });
+
+  render();
+</script>
+</body>
+</html>
