@@ -4,55 +4,191 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Emoji Quit Tracker</title>
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <!-- If you upload icon-180.png to repo root, uncomment this:
+  <link rel="apple-touch-icon" href="icon-180.png">
+  -->
+
   <style>
-    :root { --bg:#f6f7f9; --card:#fff; --line:#e6e6e6; --muted:#6b7280; --text:#111827; }
-    body { font-family:-apple-system, system-ui, Arial; margin:0; background:var(--bg); color:var(--text); }
-    header { padding:14px; background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10; }
-    h1 { font-size:18px; margin:0 0 8px; }
-    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    button { border:1px solid #ddd; background:#fff; padding:10px 12px; border-radius:12px; cursor:pointer; }
-    button.primary { background:#111827; color:#fff; border-color:#111827; }
-    .pill { font-size:12px; padding:4px 8px; border:1px solid #e5e7eb; border-radius:999px; background:#fafafa; color:var(--muted); }
-    main { padding:14px; max-width:1100px; margin:0 auto; }
-    .grid { display:grid; grid-template-columns: 1.25fr 1fr; gap:12px; }
+    :root{
+      --bg:#f0f9ff;
+      --card:#ffffff;
+      --line:#e0f2fe;
+      --text:#0f172a;
+      --muted:#64748b;
+
+      --green:#22c55e;
+      --amber:#f59e0b;
+      --blue:#3b82f6;
+      --purple:#a855f7;
+      --red:#ef4444;
+
+      --shadow: 0 1px 6px rgba(15, 23, 42, .10);
+      --shadow2: 0 6px 18px rgba(15, 23, 42, .10);
+    }
+
+    body{ font-family:-apple-system, system-ui, Arial; margin:0; background:var(--bg); color:var(--text); }
+
+    header{
+      padding:14px;
+      background:rgba(255,255,255,.9);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--line);
+      position:sticky; top:0; z-index:10;
+    }
+
+    h1{ font-size:18px; margin:0 0 8px; }
+    .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+    button{
+      border:none; background:#fff;
+      padding:10px 12px; border-radius:14px;
+      cursor:pointer; box-shadow: var(--shadow);
+      font-size:14px;
+    }
+    button.primary{
+      background:linear-gradient(135deg, var(--blue), var(--purple));
+      color:#fff; box-shadow: var(--shadow2);
+    }
+    button:active{ transform:scale(.98); }
+
+    .pill{
+      font-size:12px; padding:6px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:#fff; color:var(--muted);
+      box-shadow: var(--shadow);
+    }
+
+    main{ padding:14px; max-width:1100px; margin:0 auto; }
+    .grid{ display:grid; grid-template-columns: 1.25fr 1fr; gap:12px; }
     @media (max-width: 960px){ .grid{ grid-template-columns:1fr; } }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px; }
-    .card h2 { font-size:15px; margin:0 0 10px; }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:12px;
+      box-shadow: var(--shadow);
+    }
+    .card h2{ font-size:15px; margin:0 0 10px; }
     .muted{ color:var(--muted); font-size:12px; line-height:1.35rem; }
-    .calHead { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
-    .monthTitle { font-weight:700; }
-    .controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+    .banner{
+      border:1px solid #fde68a;
+      background:linear-gradient(180deg, #fff7ed, #fff);
+      border-radius:16px;
+      padding:10px 12px;
+      margin-bottom:10px;
+      box-shadow: var(--shadow);
+    }
+
+    .calHead{
+      display:flex; justify-content:space-between;
+      align-items:flex-start; gap:10px; flex-wrap:wrap;
+    }
+    .monthTitle{ font-weight:900; }
+    .controls{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
     select, input[type="text"], input[type="time"], input[type="number"], textarea{
-      border:1px solid #ddd; border-radius:12px; padding:10px 12px; background:#fff; font-size:14px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px 12px;
+      background:#fff;
+      font-size:14px;
+      box-shadow: var(--shadow);
     }
     textarea{ width:100%; min-height:90px; resize:vertical; }
-    .cal { margin-top:10px; display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; }
-    .dow { font-size:12px; color:var(--muted); text-align:center; padding:2px 0 6px; }
-    .day {
-      min-height:62px; background:#fff; border:1px solid #ececec; border-radius:12px; padding:6px;
-      display:flex; flex-direction:column; gap:6px; cursor:pointer;
+
+    .cal{ margin-top:10px; display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; }
+    .dow{ font-size:12px; color:var(--muted); text-align:center; padding:2px 0 6px; }
+
+    .day{
+      min-height:62px;
+      background:#fff;
+      border:1px solid rgba(224,242,254,.9);
+      border-radius:14px;
+      padding:7px;
+      display:flex; flex-direction:column; gap:6px;
+      cursor:pointer;
+      box-shadow: 0 1px 3px rgba(15,23,42,.08);
     }
-    .day.other { opacity:.45; }
-    .day.selected { outline: 2px solid #111827; }
-    .num { font-size:12px; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
-    .emojis { display:flex; flex-wrap:wrap; gap:6px; }
-    .chip {
-      border:1px solid #e5e7eb; background:#fff; border-radius:999px; padding:10px 12px;
-      font-size:18px; cursor:pointer; line-height:1;
-      display:inline-flex; align-items:center; gap:8px;
+    .day.other{ opacity:.45; }
+    .day.selected{ outline: 2px solid rgba(59,130,246,.65); }
+    .day.has-emoji{
+      background: linear-gradient(180deg, #ecfeff, #ffffff);
+      border:1px solid rgba(103,232,249,.75);
     }
-    .chip.on{ background:#111827; border-color:#111827; color:#fff; }
-    .label { font-size:12px; opacity:.85; }
-    .banner { border:1px solid #f0e3b5; background:#fff9db; border-radius:14px; padding:10px 12px; margin-bottom:10px; }
-    .stats { display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; }
+
+    .num{ font-size:12px; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
+    .emojis{ display:flex; flex-wrap:wrap; gap:6px; }
+
+    .chip{
+      border:none;
+      background:#fff;
+      border-radius:999px;
+      padding:10px 12px;
+      font-size:18px;
+      cursor:pointer;
+      line-height:1;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      box-shadow: var(--shadow);
+      transition: transform .05s ease;
+    }
+    .chip:active{ transform:scale(.97); }
+    .chip.on{
+      color:#0b1220;
+      outline: 2px solid rgba(15,23,42,.08);
+      box-shadow: var(--shadow2);
+    }
+    .label{ font-size:12px; color:rgba(15,23,42,.70); }
+
+    /* Soft colour per emoji (add more if you want) */
+    .chip[data-emoji="🎰"]{ background:#fff7ed; } .chip.on[data-emoji="🎰"]{ background:#fed7aa; }
+    .chip[data-emoji="🚭"]{ background:#ecfdf5; } .chip.on[data-emoji="🚭"]{ background:#bbf7d0; }
+    .chip[data-emoji="🍺🚫"]{ background:#eff6ff; } .chip.on[data-emoji="🍺🚫"]{ background:#bfdbfe; }
+
+    /* Exercise emojis (all get a fresh cyan-ish tint) */
+    .chip[data-emoji="🏋️‍♂️"], .chip[data-emoji="🏃"], .chip[data-emoji="🚶"], .chip[data-emoji="🚴"], .chip[data-emoji="🧘"], .chip[data-emoji="🏊"]{ background:#ecfeff; }
+    .chip.on[data-emoji="🏋️‍♂️"], .chip.on[data-emoji="🏃"], .chip.on[data-emoji="🚶"], .chip.on[data-emoji="🚴"], .chip.on[data-emoji="🧘"], .chip.on[data-emoji="🏊"]{ background:#a5f3fc; }
+
+    .chip[data-emoji="🔥"]{ background:#fff7ed; } .chip.on[data-emoji="🔥"]{ background:#ffedd5; }
+    .chip[data-emoji="🌱"]{ background:#ecfdf5; } .chip.on[data-emoji="🌱"]{ background:#d1fae5; }
+    .chip[data-emoji="😌"]{ background:#eff6ff; } .chip.on[data-emoji="😌"]{ background:#dbeafe; }
+    .chip[data-emoji="🧠"]{ background:#f5f3ff; } .chip.on[data-emoji="🧠"]{ background:#ede9fe; }
+    .chip[data-emoji="😮‍💨"]{ background:#fff1f2; } .chip.on[data-emoji="😮‍💨"]{ background:#ffe4e6; }
+    .chip[data-emoji="💪"]{ background:#fefce8; } .chip.on[data-emoji="💪"]{ background:#fef9c3; }
+
+    .stats{ display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; }
     @media (max-width: 420px){ .stats{ grid-template-columns:1fr; } }
-    .stat { border:1px solid #eee; border-radius:14px; padding:10px; background:#fafafa; }
-    .stat .k { font-size:12px; color:var(--muted); }
-    .stat .v { font-size:18px; font-weight:800; margin-top:2px; }
-    .two { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+
+    .stat{
+      border:1px solid rgba(224,242,254,.9);
+      border-radius:16px;
+      padding:10px;
+      background:linear-gradient(180deg, #f8fafc, #ffffff);
+      box-shadow: var(--shadow);
+    }
+    .stat .k{ font-size:12px; color:var(--muted); }
+    .stat .v{ font-size:18px; font-weight:900; margin-top:2px; }
+
+    .streak{
+      font-size:22px;
+      background:linear-gradient(90deg, var(--amber), var(--red));
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      display:inline-block;
+      letter-spacing:1px;
+    }
+
+    .two{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
     @media (max-width: 520px){ .two{ grid-template-columns:1fr; } }
   </style>
 </head>
+
 <body>
 <header>
   <h1>✅ Emoji Quit Tracker</h1>
@@ -78,6 +214,7 @@
           <div class="muted" id="selectedTitle">Select a day</div>
           <div class="muted" id="whyPreview" style="margin-top:6px;"></div>
         </div>
+
         <div class="controls">
           <select id="viewSelect">
             <option value="month">Month</option>
@@ -108,7 +245,7 @@
     <div class="card">
       <h2>Tap emojis for this day</h2>
       <div class="muted" style="margin-bottom:10px;">
-        No “missed days”, no “relapse” labels. Just pick what fits today. 🌱
+        No “missed days”, no labels. Just pick what fits today. 🌱
       </div>
 
       <div class="emojis" id="emojiList"></div>
@@ -126,7 +263,7 @@
       <div style="margin-top:12px;" class="card">
         <h2 style="margin:0 0 8px;">Stats (focus emoji)</h2>
         <div class="muted" style="margin-bottom:10px;">
-          Focus shows streak 🔥, gaps 🕳️, total days ✅, and money saved 💷 (if you set it).
+          Focus shows streak 🔥, gap days 🕳️, total ✅, and saved 💷 (if set).
         </div>
 
         <div class="stats">
@@ -158,20 +295,41 @@
             <textarea id="globalWhy" placeholder="e.g., ❤️ 👨‍👩‍👧‍👦 🌱 💷 or a sentence…"></textarea>
             <button id="saveWhyBtn" class="primary" style="margin-top:8px;">Save</button>
           </div>
+
           <div>
             <div class="muted" style="margin-bottom:6px;">⏰ Reminder time (in-app banner)</div>
             <input id="reminderTime" type="time" />
             <div class="muted" style="margin-top:6px;">
-              This shows a gentle banner when you open the app after this time and haven’t logged anything today.
+              Shows a gentle banner when you open the app after this time and haven’t logged today.
             </div>
             <button id="saveReminderBtn" class="primary" style="margin-top:8px;">Save</button>
           </div>
         </div>
 
-        <hr style="border:none;border-top:1px solid #eee; margin:14px 0;" />
+        <hr style="border:none;border-top:1px solid var(--line); margin:14px 0;" />
+
+        <h2 style="margin:0 0 8px;">Exercise emoji</h2>
+        <div class="muted" style="margin-bottom:10px;">Pick what “exercise” looks like for you. (Your past logs stay consistent.)</div>
+
+        <div class="two">
+          <div>
+            <div class="muted" style="margin-bottom:6px;">🏃 Choose exercise emoji</div>
+            <select id="exerciseSelect"></select>
+          </div>
+          <div>
+            <div class="muted" style="margin-bottom:6px;">🏷️ Exercise label (optional)</div>
+            <input id="exerciseLabel" type="text" placeholder="e.g., Walk / Gym / Run" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:8px;">
+          <button id="saveExerciseBtn" class="primary">Save</button>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--line); margin:14px 0;" />
 
         <h2 style="margin:0 0 8px;">Focus emoji settings</h2>
-        <div class="muted" style="margin-bottom:10px;">Set £ saved per day and an optional private label for you.</div>
+        <div class="muted" style="margin-bottom:10px;">Set £ saved per day and an optional private label.</div>
 
         <div class="two">
           <div>
@@ -180,7 +338,7 @@
           </div>
           <div>
             <div class="muted" style="margin-bottom:6px;">🏷️ Label (optional)</div>
-            <input id="emojiLabel" type="text" placeholder="e.g., Gambling / Smoking / Drink-free" />
+            <input id="emojiLabel" type="text" placeholder="e.g., Smoke-free / Drink-free" />
           </div>
         </div>
 
@@ -188,13 +346,13 @@
           <button id="saveEmojiSettingsBtn" class="primary">Save</button>
         </div>
 
-        <hr style="border:none;border-top:1px solid #eee; margin:14px 0;" />
+        <hr style="border:none;border-top:1px solid var(--line); margin:14px 0;" />
 
         <h2 style="margin:0 0 8px;">Add a custom emoji</h2>
-        <div class="muted" style="margin-bottom:8px;">Paste an emoji (or short emoji combo) and optionally a label.</div>
+        <div class="muted" style="margin-bottom:8px;">Paste an emoji (or short combo) + optional label.</div>
 
         <div class="two">
-          <input id="customEmoji" type="text" placeholder="e.g., 🎰" />
+          <input id="customEmoji" type="text" placeholder="e.g., 🧘" />
           <input id="customEmojiLabel" type="text" placeholder="Optional label" />
         </div>
         <div class="row" style="margin-top:8px;">
@@ -206,25 +364,36 @@
 </main>
 
 <script>
-  const STORAGE_KEY = "emoji_quit_tracker_v1";
+  const STORAGE_KEY = "emoji_quit_tracker_v2";
 
-  // Default emoji set (emoji-first). Labels are optional and hidden unless toggled.
-  const DEFAULT_EMOJIS = [
-    { e:"🎰", l:"Gambling-free" },
-    { e:"🚭", l:"Smoke-free" },
-    { e:"🍺🚫", l:"Drink-free" },
-    { e:"📱", l:"Low scrolling" },
-    { e:"🎮", l:"Less gaming" },
-    { e:"💷", l:"No impulse spend" },
-    { e:"🍔🚫", l:"No takeaway" },
-    { e:"🍬🚫", l:"Low sugar" },
-    { e:"🧠", l:"Urges managed" },
-    { e:"😮‍💨", l:"Stressy day" },
-    { e:"😌", l:"Calm day" },
-    { e:"💪", l:"Strong effort" },
-    { e:"🌱", l:"Fresh start" },
-    { e:"🔥", l:"Proud day" }
+  // Exercise options (user picks one)
+  const EXERCISE_OPTIONS = [
+    { e:"🏋️‍♂️", l:"Exercise" },
+    { e:"🏃", l:"Run" },
+    { e:"🚶", l:"Walk" },
+    { e:"🚴", l:"Cycle" },
+    { e:"🧘", l:"Stretch" },
+    { e:"🏊", l:"Swim" }
   ];
+
+  // Core defaults (user asked for smoking/gambling/drinking + exercise)
+  function buildDefaultEmojis(exerciseEmoji){
+    const ex = exerciseEmoji || "🏋️‍♂️";
+    return [
+      { e:"🎰", l:"Gambling-free" },
+      { e:"🚭", l:"Smoke-free" },
+      { e:"🍺🚫", l:"Drink-free" },
+      { e: ex,  l:"Exercise done" },
+
+      // gentle support emojis
+      { e:"🔥", l:"Proud day" },
+      { e:"💪", l:"Strong effort" },
+      { e:"😌", l:"Calm day" },
+      { e:"🧠", l:"Urges managed" },
+      { e:"😮‍💨", l:"Stressy day" },
+      { e:"🌱", l:"Fresh start" }
+    ];
+  }
 
   const DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
@@ -247,48 +416,65 @@
   }
 
   function loadState(){
+    const now = new Date();
+    const blank = {
+      emojis: buildDefaultEmojis("🏋️‍♂️"),
+      marks: {}, notes: {},
+      selected: isoDate(now),
+      monthAnchor: isoDate(now),
+      view: "month",
+      focus: "🎰",
+      labelsOn: false,
+      settings: {
+        globalWhy: "",
+        reminderTime: "20:00",
+        perEmoji: {},
+        exerciseEmoji: "🏋️‍♂️",
+        exerciseLabel: "Exercise done",
+        exercisePrevEmoji: "🏋️‍♂️"
+      }
+    };
+
     try{
       const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw){
-        const now = new Date();
-        return {
-          emojis: DEFAULT_EMOJIS,           // [{e,l}]
-          marks: {},                       // { "YYYY-MM-DD": ["🎰","🔥"] }
-          notes: {},                       // { "YYYY-MM-DD": "..." }
-          selected: isoDate(now),
-          monthAnchor: isoDate(now),
-          view: "month",
-          focus: DEFAULT_EMOJIS[0].e,
-          labelsOn: false,
-          settings: {
-            globalWhy: "",
-            reminderTime: "20:00",
-            perEmoji: {}                   // { "🎰": { dailySave: 10, label:"Gambling-free" } }
-          }
-        };
-      }
+      if(!raw) return blank;
+
       const st = JSON.parse(raw);
-      st.emojis = Array.isArray(st.emojis) && st.emojis.length ? st.emojis : DEFAULT_EMOJIS;
       st.marks = st.marks || {};
       st.notes = st.notes || {};
-      st.selected = st.selected || isoDate(new Date());
-      st.monthAnchor = st.monthAnchor || isoDate(new Date());
+      st.selected = st.selected || isoDate(now);
+      st.monthAnchor = st.monthAnchor || isoDate(now);
       st.view = st.view || "month";
-      st.focus = st.focus || (st.emojis[0] && st.emojis[0].e) || "🎰";
       st.labelsOn = !!st.labelsOn;
-      st.settings = st.settings || { globalWhy:"", reminderTime:"20:00", perEmoji:{} };
+      st.settings = st.settings || {};
       st.settings.perEmoji = st.settings.perEmoji || {};
+      st.settings.reminderTime = st.settings.reminderTime || "20:00";
+      st.settings.exerciseEmoji = st.settings.exerciseEmoji || "🏋️‍♂️";
+      st.settings.exerciseLabel = (st.settings.exerciseLabel ?? "Exercise done");
+      st.settings.exercisePrevEmoji = st.settings.exercisePrevEmoji || st.settings.exerciseEmoji;
+
+      // If emojis missing, rebuild with stored exercise emoji
+      if(!Array.isArray(st.emojis) || !st.emojis.length){
+        st.emojis = buildDefaultEmojis(st.settings.exerciseEmoji);
+      }
+
+      // Ensure exercise emoji exists in list
+      if(!st.emojis.some(x => x.e === st.settings.exerciseEmoji)){
+        // remove any existing exercise option emojis and add chosen one near top
+        const exerciseSet = new Set(EXERCISE_OPTIONS.map(x=>x.e));
+        st.emojis = st.emojis.filter(x => !exerciseSet.has(x.e));
+        st.emojis.splice(3, 0, { e: st.settings.exerciseEmoji, l: "Exercise done" });
+      }
+
+      // Ensure focus exists
+      if(!st.emojis.some(x=>x.e === st.focus)) st.focus = st.emojis[0].e;
+
       return st;
     }catch{
-      const now = new Date();
-      return {
-        emojis: DEFAULT_EMOJIS, marks:{}, notes:{},
-        selected: isoDate(now), monthAnchor: isoDate(now),
-        view:"month", focus: DEFAULT_EMOJIS[0].e, labelsOn:false,
-        settings:{ globalWhy:"", reminderTime:"20:00", perEmoji:{} }
-      };
+      return blank;
     }
   }
+
   function saveState(st){ localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); }
 
   function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
@@ -322,7 +508,6 @@
     return getMarksForDay(st, iso).includes(emoji);
   }
 
-  // days where the focus emoji is present
   function completedDays(st, emoji){
     const days = [];
     for(const [day, arr] of Object.entries(st.marks)){
@@ -331,7 +516,6 @@
     return days.sort();
   }
 
-  // streak only counts if TODAY has that emoji; otherwise 0 (gentle)
   function streakFor(st, emoji){
     const today = isoDate(new Date());
     if(!dayHasEmoji(st, today, emoji)) return 0;
@@ -347,7 +531,6 @@
     return streak;
   }
 
-  // gap days since last completed day (if last day is today -> 0)
   function gapSinceLast(st, emoji){
     const today = isoDate(new Date());
     const days = completedDays(st, emoji);
@@ -396,7 +579,28 @@
   function focusLabel(st){
     const found = st.emojis.find(x => x.e === st.focus);
     const per = st.settings.perEmoji[st.focus] || {};
-    return (per.label || (found && found.l) || "").trim();
+    // allow custom label, else default label, else blank
+    const fallback = (found && found.l) || "";
+    return (per.label || fallback || "").trim();
+  }
+
+  // Migration: if exercise emoji changes, swap old->new in all marks + settings
+  function migrateExerciseEmoji(st, oldEmoji, newEmoji){
+    if(!oldEmoji || !newEmoji || oldEmoji === newEmoji) return;
+
+    for(const day of Object.keys(st.marks)){
+      const arr = getMarksForDay(st, day);
+      if(!arr.length) continue;
+      const out = arr.map(e => e === oldEmoji ? newEmoji : e);
+      // de-dupe
+      st.marks[day] = Array.from(new Set(out));
+    }
+
+    // move perEmoji settings if user had dailySave etc on old exercise emoji
+    if(st.settings.perEmoji[oldEmoji] && !st.settings.perEmoji[newEmoji]){
+      st.settings.perEmoji[newEmoji] = st.settings.perEmoji[oldEmoji];
+      delete st.settings.perEmoji[oldEmoji];
+    }
   }
 
   function render(){
@@ -405,7 +609,7 @@
     const selectedDate = parseIso(selectedIso);
     const anchorDate = parseIso(st.monthAnchor);
 
-    // banner
+    // reminder banner
     const banner = document.getElementById("reminderBanner");
     if(shouldShowReminderBanner(st)){
       const why = (st.settings.globalWhy || "").trim();
@@ -416,7 +620,7 @@
       banner.innerHTML = "";
     }
 
-    // header month
+    // month labels
     document.getElementById("monthPill").textContent = monthLabel(anchorDate);
     document.getElementById("monthTitle").textContent = monthLabel(anchorDate);
 
@@ -454,6 +658,18 @@
       ? `❤️ ${escapeHtml(globalWhy)}`
       : (fl ? `🏷️ ${escapeHtml(fl)}` : "");
 
+    // exercise select
+    const exSel = document.getElementById("exerciseSelect");
+    exSel.innerHTML = "";
+    EXERCISE_OPTIONS.forEach(x=>{
+      const opt = document.createElement("option");
+      opt.value = x.e;
+      opt.textContent = `${x.e}  ${x.l}`;
+      exSel.appendChild(opt);
+    });
+    exSel.value = st.settings.exerciseEmoji || "🏋️‍♂️";
+    document.getElementById("exerciseLabel").value = st.settings.exerciseLabel ?? "";
+
     // DOW
     const dows = document.getElementById("calDows");
     dows.innerHTML = "";
@@ -470,8 +686,15 @@
     const { cells } = calendarCells(anchorDate);
 
     cells.forEach(c=>{
+      const marks = getMarksForDay(st,c.iso);
+
       const dayEl = document.createElement("div");
-      dayEl.className = "day" + (c.inMonth ? "" : " other") + (c.iso === selectedIso ? " selected" : "");
+      dayEl.className =
+        "day" +
+        (c.inMonth ? "" : " other") +
+        (c.iso === selectedIso ? " selected" : "") +
+        (marks.length ? " has-emoji" : "");
+
       dayEl.addEventListener("click", ()=>{
         const s = loadState();
         s.selected = c.iso;
@@ -481,17 +704,15 @@
 
       const top = document.createElement("div");
       top.className = "num";
-      const marks = getMarksForDay(st,c.iso);
       top.innerHTML = `<span>${c.date.getDate()}</span><span>${marks.length ? "✨" : ""}</span>`;
 
       const emojis = document.createElement("div");
       emojis.className = "emojis";
 
-      // show up to 6 emojis on the day
       marks.slice(0,6).forEach(e=>{
         const b = document.createElement("div");
         b.className = "pill";
-        b.style.color = "#111827";
+        b.style.color = "var(--text)";
         b.style.fontSize = "14px";
         b.textContent = e;
         emojis.appendChild(b);
@@ -517,15 +738,20 @@
       const btn = document.createElement("button");
       btn.className = "chip" + (selectedMarks.has(x.e) ? " on" : "");
       btn.type = "button";
-      btn.innerHTML = st.labelsOn && (x.l || focusLabel(st))
-        ? `${escapeHtml(x.e)} <span class="label">${escapeHtml((st.settings.perEmoji[x.e]||{}).label || x.l || "")}</span>`
+      btn.setAttribute("data-emoji", x.e);
+
+      const label = (st.settings.perEmoji[x.e]||{}).label || x.l || "";
+      btn.innerHTML = st.labelsOn && label
+        ? `${escapeHtml(x.e)} <span class="label">${escapeHtml(label)}</span>`
         : `${escapeHtml(x.e)}`;
+
       btn.addEventListener("click", ()=>{
         const s = loadState();
         toggleMark(s, selectedIso, x.e);
         saveState(s);
         render();
       });
+
       list.appendChild(btn);
     });
 
@@ -536,12 +762,14 @@
     document.getElementById("globalWhy").value = st.settings.globalWhy || "";
     document.getElementById("reminderTime").value = st.settings.reminderTime || "20:00";
 
+    // per-emoji settings for focus
     const per = st.settings.perEmoji[st.focus] || {};
     document.getElementById("dailySave").value = (per.dailySave ?? "");
     document.getElementById("emojiLabel").value = (per.label ?? focusLabel(st));
 
     // stats
-    document.getElementById("streakVal").textContent = "🔥".repeat(Math.min(20, streakFor(st, st.focus))) || "0";
+    const streak = streakFor(st, st.focus);
+    document.getElementById("streakVal").innerHTML = streak ? `<span class="streak">${"🔥".repeat(Math.min(20, streak))}</span>` : "0";
     document.getElementById("gapVal").textContent = String(gapSinceLast(st, st.focus));
     document.getElementById("totalVal").textContent = String(totalCompleted(st, st.focus));
     document.getElementById("savedVal").textContent = formatMoneyGBP(moneySaved(st, st.focus));
@@ -564,7 +792,7 @@
     }
   }
 
-  // Buttons / handlers
+  // Navigation / UI handlers
   document.getElementById("prevBtn").addEventListener("click", ()=>{
     const st = loadState();
     const d = parseIso(st.monthAnchor);
@@ -573,6 +801,7 @@
     saveState(st);
     render();
   });
+
   document.getElementById("nextBtn").addEventListener("click", ()=>{
     const st = loadState();
     const d = parseIso(st.monthAnchor);
@@ -581,6 +810,7 @@
     saveState(st);
     render();
   });
+
   document.getElementById("todayBtn").addEventListener("click", ()=>{
     const st = loadState();
     const t = new Date();
@@ -611,6 +841,7 @@
     render();
   });
 
+  // Notes
   document.getElementById("saveNotesBtn").addEventListener("click", ()=>{
     const st = loadState();
     st.notes[st.selected] = document.getElementById("notesBox").value || "";
@@ -618,6 +849,7 @@
     alert("Saved ✅");
     render();
   });
+
   document.getElementById("clearNotesBtn").addEventListener("click", ()=>{
     const st = loadState();
     if(!confirm("Clear notes for this day?")) return;
@@ -626,6 +858,7 @@
     render();
   });
 
+  // Why + reminder
   document.getElementById("saveWhyBtn").addEventListener("click", ()=>{
     const st = loadState();
     st.settings.globalWhy = document.getElementById("globalWhy").value || "";
@@ -642,6 +875,35 @@
     render();
   });
 
+  // Exercise settings + migration
+  document.getElementById("saveExerciseBtn").addEventListener("click", ()=>{
+    const st = loadState();
+    const newEmoji = document.getElementById("exerciseSelect").value;
+    const newLabel = document.getElementById("exerciseLabel").value || "Exercise done";
+
+    const oldEmoji = st.settings.exerciseEmoji || "🏋️‍♂️";
+    st.settings.exercisePrevEmoji = oldEmoji;
+    st.settings.exerciseEmoji = newEmoji;
+    st.settings.exerciseLabel = newLabel;
+
+    // migrate existing logs from old exercise emoji to new
+    migrateExerciseEmoji(st, oldEmoji, newEmoji);
+
+    // rebuild emoji list: remove any exercise emojis, insert chosen one into slot 4
+    const exerciseSet = new Set(EXERCISE_OPTIONS.map(x=>x.e));
+    st.emojis = st.emojis.filter(x => !exerciseSet.has(x.e));
+    st.emojis.splice(3, 0, { e:newEmoji, l:"Exercise done" });
+
+    // also update label for the chosen emoji
+    st.settings.perEmoji[newEmoji] = st.settings.perEmoji[newEmoji] || {};
+    st.settings.perEmoji[newEmoji].label = newLabel;
+
+    saveState(st);
+    alert("Saved 🏃");
+    render();
+  });
+
+  // Per-emoji settings for focus
   document.getElementById("saveEmojiSettingsBtn").addEventListener("click", ()=>{
     const st = loadState();
     const e = st.focus;
@@ -653,6 +915,7 @@
     render();
   });
 
+  // Add custom emoji
   document.getElementById("addCustomBtn").addEventListener("click", ()=>{
     const emoji = (document.getElementById("customEmoji").value || "").trim();
     const label = (document.getElementById("customEmojiLabel").value || "").trim();
@@ -661,7 +924,6 @@
     const st = loadState();
     if(!st.emojis.some(x=>x.e === emoji)){
       st.emojis.push({ e: emoji, l: label });
-      if(!st.focus) st.focus = emoji;
       saveState(st);
     }
     document.getElementById("customEmoji").value = "";
@@ -669,6 +931,7 @@
     render();
   });
 
+  // Export / reset
   document.getElementById("exportBtn").addEventListener("click", async ()=>{
     const st = loadState();
     const blob = new Blob([JSON.stringify(st, null, 2)], { type:"application/json" });
