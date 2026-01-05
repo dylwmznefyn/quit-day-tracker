@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Quit Day Tracker+</title>
+  <title>Emoji Quit Tracker</title>
   <style>
     :root { --bg:#f6f7f9; --card:#fff; --line:#e6e6e6; --muted:#6b7280; --text:#111827; }
     body { font-family:-apple-system, system-ui, Arial; margin:0; background:var(--bg); color:var(--text); }
@@ -18,48 +18,44 @@
     @media (max-width: 960px){ .grid{ grid-template-columns:1fr; } }
     .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px; }
     .card h2 { font-size:15px; margin:0 0 10px; }
+    .muted{ color:var(--muted); font-size:12px; line-height:1.35rem; }
     .calHead { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
-    .monthTitle { font-weight:650; }
+    .monthTitle { font-weight:700; }
+    .controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    select, input[type="text"], input[type="time"], input[type="number"], textarea{
+      border:1px solid #ddd; border-radius:12px; padding:10px 12px; background:#fff; font-size:14px;
+    }
+    textarea{ width:100%; min-height:90px; resize:vertical; }
     .cal { margin-top:10px; display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; }
     .dow { font-size:12px; color:var(--muted); text-align:center; padding:2px 0 6px; }
     .day {
-      min-height:58px; background:#fff; border:1px solid #ececec; border-radius:12px; padding:6px;
-      display:flex; flex-direction:column; gap:4px; cursor:pointer;
+      min-height:62px; background:#fff; border:1px solid #ececec; border-radius:12px; padding:6px;
+      display:flex; flex-direction:column; gap:6px; cursor:pointer;
     }
     .day.other { opacity:.45; }
     .day.selected { outline: 2px solid #111827; }
     .num { font-size:12px; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
-    .badges { display:flex; flex-wrap:wrap; gap:4px; }
-    .badge { font-size:11px; padding:2px 6px; border-radius:999px; border:1px solid #e5e7eb; background:#fafafa; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .controls { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    select, input[type="text"], input[type="time"], input[type="number"], textarea{
-      border:1px solid #ddd; border-radius:12px; padding:10px 12px; background:#fff; font-size:14px; width:100%;
-    }
-    textarea{ min-height:90px; resize:vertical; }
-    .list { display:flex; flex-wrap:wrap; gap:8px; }
-    .widgetBtn{
+    .emojis { display:flex; flex-wrap:wrap; gap:6px; }
+    .chip {
       border:1px solid #e5e7eb; background:#fff; border-radius:999px; padding:10px 12px;
-      font-size:14px; cursor:pointer;
+      font-size:18px; cursor:pointer; line-height:1;
+      display:inline-flex; align-items:center; gap:8px;
     }
-    .widgetBtn.on{ background:#111827; border-color:#111827; color:#fff; }
-    .muted{ color:var(--muted); font-size:12px; line-height:1.35rem; }
+    .chip.on{ background:#111827; border-color:#111827; color:#fff; }
+    .label { font-size:12px; opacity:.85; }
+    .banner { border:1px solid #f0e3b5; background:#fff9db; border-radius:14px; padding:10px 12px; margin-bottom:10px; }
     .stats { display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; }
     @media (max-width: 420px){ .stats{ grid-template-columns:1fr; } }
     .stat { border:1px solid #eee; border-radius:14px; padding:10px; background:#fafafa; }
     .stat .k { font-size:12px; color:var(--muted); }
-    .stat .v { font-size:18px; font-weight:700; margin-top:2px; }
-    .danger { border-color:#f3c6c6; background:#fff5f5; }
-    .banner {
-      border:1px solid #f0e3b5; background:#fff9db; border-radius:14px; padding:10px 12px; margin-bottom:10px;
-    }
+    .stat .v { font-size:18px; font-weight:800; margin-top:2px; }
     .two { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
     @media (max-width: 520px){ .two{ grid-template-columns:1fr; } }
-    .footer { text-align:center; padding:14px 0 18px; color:var(--muted); font-size:12px; }
   </style>
 </head>
 <body>
 <header>
-  <h1>✅ Quit Day Tracker+</h1>
+  <h1>✅ Emoji Quit Tracker</h1>
   <div class="row">
     <button id="prevBtn">←</button>
     <span class="pill" id="monthPill">Month</span>
@@ -74,6 +70,7 @@
   <div id="reminderBanner" class="banner" style="display:none;"></div>
 
   <div class="grid">
+    <!-- Calendar -->
     <div class="card">
       <div class="calHead">
         <div>
@@ -82,11 +79,17 @@
           <div class="muted" id="whyPreview" style="margin-top:6px;"></div>
         </div>
         <div class="controls">
-          <select id="viewSelect" title="View">
+          <select id="viewSelect">
             <option value="month">Month</option>
             <option value="year">Year totals</option>
           </select>
-          <select id="focusSelect" title="Focus widget"></select>
+
+          <select id="focusSelect" title="Focus emoji"></select>
+
+          <label class="pill" style="display:flex; gap:8px; align-items:center;">
+            <input id="labelsToggle" type="checkbox" style="transform:scale(1.1);" />
+            Labels
+          </label>
         </div>
       </div>
 
@@ -96,127 +99,131 @@
       </div>
 
       <div id="yearWrap" style="display:none; margin-top:10px;">
-        <div class="muted">Year totals (completed quit-days per widget):</div>
+        <div class="muted">Year totals (how many days each emoji was used):</div>
         <div style="margin-top:10px;" id="yearTotals"></div>
       </div>
     </div>
 
+    <!-- Day + stats -->
     <div class="card">
-      <h2>Selected day</h2>
-
+      <h2>Tap emojis for this day</h2>
       <div class="muted" style="margin-bottom:10px;">
-        Tap widgets to mark a <b>completed day</b> (e.g., smoke-free / drink-free). Streaks reset if you miss a day.
+        No “missed days”, no “relapse” labels. Just pick what fits today. 🌱
       </div>
 
-      <div class="list" id="widgetList"></div>
+      <div class="emojis" id="emojiList"></div>
 
       <div style="margin-top:12px;" class="card">
-        <h2 style="margin:0 0 8px;">Notes for this day</h2>
-        <div class="muted" style="margin-bottom:8px;">Wins, triggers, what helped, who you did it for — anything.</div>
-        <textarea id="notesBox" placeholder="Type notes…"></textarea>
+        <h2 style="margin:0 0 8px;">📝 Notes (optional)</h2>
+        <div class="muted" style="margin-bottom:8px;">Keep it as emojis or add words if you want.</div>
+        <textarea id="notesBox" placeholder="e.g., 😮‍💨 🧠 💪 or a short note…"></textarea>
         <div class="row" style="margin-top:8px;">
-          <button id="saveNotesBtn" class="primary">Save notes</button>
+          <button id="saveNotesBtn" class="primary">Save</button>
           <button id="clearNotesBtn">Clear</button>
         </div>
       </div>
 
       <div style="margin-top:12px;" class="card">
-        <h2 style="margin:0 0 8px;">Stats (focus widget)</h2>
+        <h2 style="margin:0 0 8px;">Stats (focus emoji)</h2>
         <div class="muted" style="margin-bottom:10px;">
-          Choose a focus widget (top right) to see streak, missed days, and money saved.
+          Focus shows streak 🔥, gaps 🕳️, total days ✅, and money saved 💷 (if you set it).
         </div>
 
         <div class="stats">
           <div class="stat">
-            <div class="k">Streak</div>
+            <div class="k">🔥 Streak</div>
             <div class="v" id="streakVal">0</div>
           </div>
           <div class="stat">
-            <div class="k">Missed days (since last)</div>
-            <div class="v" id="missedVal">0</div>
+            <div class="k">🕳️ Gap days</div>
+            <div class="v" id="gapVal">0</div>
           </div>
           <div class="stat">
-            <div class="k">Completed days</div>
-            <div class="v" id="completedVal">0</div>
+            <div class="k">✅ Total days</div>
+            <div class="v" id="totalVal">0</div>
           </div>
           <div class="stat">
-            <div class="k">Money saved (est.)</div>
+            <div class="k">💷 Saved</div>
             <div class="v" id="savedVal">£0</div>
           </div>
         </div>
       </div>
 
-      <div style="margin-top:12px;" class="card danger">
-        <h2 style="margin:0 0 8px;">Motivation & reminders</h2>
+      <div style="margin-top:12px;" class="card">
+        <h2 style="margin:0 0 8px;">Motivation & gentle reminder</h2>
 
         <div class="two">
           <div>
-            <div class="muted" style="margin-bottom:6px;">Your “why” (shown on screen)</div>
-            <textarea id="globalWhy" placeholder="E.g., For my family, my health, my money, my peace…"></textarea>
-            <button id="saveWhyBtn" class="primary" style="margin-top:8px;">Save why</button>
+            <div class="muted" style="margin-bottom:6px;">❤️ Your “why” (emoji or words)</div>
+            <textarea id="globalWhy" placeholder="e.g., ❤️ 👨‍👩‍👧‍👦 🌱 💷 or a sentence…"></textarea>
+            <button id="saveWhyBtn" class="primary" style="margin-top:8px;">Save</button>
           </div>
-
           <div>
-            <div class="muted" style="margin-bottom:6px;">Daily reminder time (in-app)</div>
+            <div class="muted" style="margin-bottom:6px;">⏰ Reminder time (in-app banner)</div>
             <input id="reminderTime" type="time" />
             <div class="muted" style="margin-top:6px;">
-              This app can’t push iPhone notifications by itself, but it will show a reminder banner when you open it after this time.
+              This shows a gentle banner when you open the app after this time and haven’t logged anything today.
             </div>
-            <button id="saveReminderBtn" class="primary" style="margin-top:8px;">Save reminder time</button>
+            <button id="saveReminderBtn" class="primary" style="margin-top:8px;">Save</button>
           </div>
         </div>
 
         <hr style="border:none;border-top:1px solid #eee; margin:14px 0;" />
 
-        <h2 style="margin:0 0 8px;">Widget settings (focus widget)</h2>
-        <div class="muted" style="margin-bottom:10px;">Set £ saved per day and an optional “why” per widget.</div>
+        <h2 style="margin:0 0 8px;">Focus emoji settings</h2>
+        <div class="muted" style="margin-bottom:10px;">Set £ saved per day and an optional private label for you.</div>
 
         <div class="two">
           <div>
-            <div class="muted" style="margin-bottom:6px;">£ saved per day</div>
+            <div class="muted" style="margin-bottom:6px;">💷 £ saved per day</div>
             <input id="dailySave" type="number" min="0" step="0.5" placeholder="e.g., 10" />
           </div>
           <div>
-            <div class="muted" style="margin-bottom:6px;">Why for this widget</div>
-            <input id="widgetWhy" type="text" placeholder="e.g., Better lungs / stop chasing losses" />
+            <div class="muted" style="margin-bottom:6px;">🏷️ Label (optional)</div>
+            <input id="emojiLabel" type="text" placeholder="e.g., Gambling / Smoking / Drink-free" />
           </div>
         </div>
+
         <div class="row" style="margin-top:8px;">
-          <button id="saveWidgetSettingsBtn" class="primary">Save widget settings</button>
+          <button id="saveEmojiSettingsBtn" class="primary">Save</button>
         </div>
 
         <hr style="border:none;border-top:1px solid #eee; margin:14px 0;" />
 
-        <h2 style="margin:0 0 8px;">Add a custom widget</h2>
-        <div class="row">
-          <input id="customInput" type="text" placeholder="e.g., No scrolling after 9pm" />
+        <h2 style="margin:0 0 8px;">Add a custom emoji</h2>
+        <div class="muted" style="margin-bottom:8px;">Paste an emoji (or short emoji combo) and optionally a label.</div>
+
+        <div class="two">
+          <input id="customEmoji" type="text" placeholder="e.g., 🎰" />
+          <input id="customEmojiLabel" type="text" placeholder="Optional label" />
+        </div>
+        <div class="row" style="margin-top:8px;">
           <button id="addCustomBtn" class="primary">Add</button>
         </div>
-      </div>
-
-      <div class="footer">
-        iPhone: open in Safari → Share → “Add to Home Screen” for an app icon.
       </div>
     </div>
   </div>
 </main>
 
 <script>
-  const STORAGE_KEY = "quit_day_tracker_plus_v2";
+  const STORAGE_KEY = "emoji_quit_tracker_v1";
 
-  const DEFAULT_WIDGETS = [
-    "Gambling",
-    "Smoking / vaping",
-    "Alcohol",
-    "Weed / cannabis",
-    "Porn",
-    "Social media scrolling",
-    "Gaming",
-    "Takeaway / fast food",
-    "Sugar / sweets",
-    "Energy drinks",
-    "Impulse spending",
-    "Procrastination"
+  // Default emoji set (emoji-first). Labels are optional and hidden unless toggled.
+  const DEFAULT_EMOJIS = [
+    { e:"🎰", l:"Gambling-free" },
+    { e:"🚭", l:"Smoke-free" },
+    { e:"🍺🚫", l:"Drink-free" },
+    { e:"📱", l:"Low scrolling" },
+    { e:"🎮", l:"Less gaming" },
+    { e:"💷", l:"No impulse spend" },
+    { e:"🍔🚫", l:"No takeaway" },
+    { e:"🍬🚫", l:"Low sugar" },
+    { e:"🧠", l:"Urges managed" },
+    { e:"😮‍💨", l:"Stressy day" },
+    { e:"😌", l:"Calm day" },
+    { e:"💪", l:"Strong effort" },
+    { e:"🌱", l:"Fresh start" },
+    { e:"🔥", l:"Proud day" }
   ];
 
   const DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
@@ -235,6 +242,9 @@
     const v = Math.round((Number(n)||0)*100)/100;
     return "£" + v.toLocaleString(undefined, { minimumFractionDigits: v%1?2:0, maximumFractionDigits:2 });
   }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
 
   function loadState(){
     try{
@@ -242,47 +252,46 @@
       if(!raw){
         const now = new Date();
         return {
-          widgets:[...DEFAULT_WIDGETS],
-          marks:{},           // { "YYYY-MM-DD": ["Smoking", ...] }
-          notes:{},           // { "YYYY-MM-DD": "text" }
+          emojis: DEFAULT_EMOJIS,           // [{e,l}]
+          marks: {},                       // { "YYYY-MM-DD": ["🎰","🔥"] }
+          notes: {},                       // { "YYYY-MM-DD": "..." }
           selected: isoDate(now),
           monthAnchor: isoDate(now),
-          view:"month",
-          focus: DEFAULT_WIDGETS[0],
+          view: "month",
+          focus: DEFAULT_EMOJIS[0].e,
+          labelsOn: false,
           settings: {
             globalWhy: "",
             reminderTime: "20:00",
-            perWidget: {}     // { widgetName: { dailySave: number, why: string } }
+            perEmoji: {}                   // { "🎰": { dailySave: 10, label:"Gambling-free" } }
           }
         };
       }
       const st = JSON.parse(raw);
-      st.widgets = Array.isArray(st.widgets) && st.widgets.length ? st.widgets : [...DEFAULT_WIDGETS];
+      st.emojis = Array.isArray(st.emojis) && st.emojis.length ? st.emojis : DEFAULT_EMOJIS;
       st.marks = st.marks || {};
       st.notes = st.notes || {};
       st.selected = st.selected || isoDate(new Date());
       st.monthAnchor = st.monthAnchor || isoDate(new Date());
       st.view = st.view || "month";
-      st.focus = st.focus || st.widgets[0];
-      st.settings = st.settings || { globalWhy:"", reminderTime:"20:00", perWidget:{} };
-      st.settings.perWidget = st.settings.perWidget || {};
+      st.focus = st.focus || (st.emojis[0] && st.emojis[0].e) || "🎰";
+      st.labelsOn = !!st.labelsOn;
+      st.settings = st.settings || { globalWhy:"", reminderTime:"20:00", perEmoji:{} };
+      st.settings.perEmoji = st.settings.perEmoji || {};
       return st;
     }catch{
       const now = new Date();
       return {
-        widgets:[...DEFAULT_WIDGETS], marks:{}, notes:{},
+        emojis: DEFAULT_EMOJIS, marks:{}, notes:{},
         selected: isoDate(now), monthAnchor: isoDate(now),
-        view:"month", focus: DEFAULT_WIDGETS[0],
-        settings:{ globalWhy:"", reminderTime:"20:00", perWidget:{} }
+        view:"month", focus: DEFAULT_EMOJIS[0].e, labelsOn:false,
+        settings:{ globalWhy:"", reminderTime:"20:00", perEmoji:{} }
       };
     }
   }
   function saveState(st){ localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); }
 
   function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
-  function endOfMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
-
-  // Calendar grid Monday-first
   function calendarCells(anchorDate){
     const first = startOfMonth(anchorDate);
     const firstDow = (first.getDay() + 6) % 7; // Mon=0..Sun=6
@@ -296,7 +305,6 @@
     }
     return { cells };
   }
-
   function monthLabel(d){
     return d.toLocaleString(undefined, { month:"long", year:"numeric" });
   }
@@ -304,83 +312,67 @@
   function getMarksForDay(st, iso){
     return Array.isArray(st.marks[iso]) ? st.marks[iso] : [];
   }
-
-  function toggleMark(st, iso, widget){
+  function toggleMark(st, iso, emoji){
     const set = new Set(getMarksForDay(st, iso));
-    if(set.has(widget)) set.delete(widget);
-    else set.add(widget);
+    if(set.has(emoji)) set.delete(emoji);
+    else set.add(emoji);
     st.marks[iso] = Array.from(set);
   }
-
-  function dayHasWidget(st, iso, widget){
-    return getMarksForDay(st, iso).includes(widget);
+  function dayHasEmoji(st, iso, emoji){
+    return getMarksForDay(st, iso).includes(emoji);
   }
 
-  function completedDaysForWidget(st, widget){
+  // days where the focus emoji is present
+  function completedDays(st, emoji){
     const days = [];
     for(const [day, arr] of Object.entries(st.marks)){
-      if(Array.isArray(arr) && arr.includes(widget)) days.push(day);
+      if(Array.isArray(arr) && arr.includes(emoji)) days.push(day);
     }
     return days.sort();
   }
 
-  // Streak ending today if today is marked, otherwise 0.
-  // Miss a day -> streak breaks -> next completion becomes streak 1.
-  function streakForWidget(st, widget){
+  // streak only counts if TODAY has that emoji; otherwise 0 (gentle)
+  function streakFor(st, emoji){
     const today = isoDate(new Date());
-    if(!dayHasWidget(st, today, widget)) return 0;
-
+    if(!dayHasEmoji(st, today, emoji)) return 0;
     let streak = 0;
     let d = parseIso(today);
     while(true){
       const key = isoDate(d);
-      if(dayHasWidget(st, key, widget)){
+      if(dayHasEmoji(st, key, emoji)){
         streak++;
         d.setDate(d.getDate()-1);
-      }else{
-        break;
-      }
+      } else break;
     }
     return streak;
   }
 
-  // Missed days since last completed day (excluding today).
-  // If never completed -> 0.
-  function missedDaysSinceLast(st, widget){
+  // gap days since last completed day (if last day is today -> 0)
+  function gapSinceLast(st, emoji){
     const today = isoDate(new Date());
-    const days = completedDaysForWidget(st, widget);
+    const days = completedDays(st, emoji);
     if(days.length === 0) return 0;
-
-    const last = days[days.length-1]; // latest completed day
-    const lastDate = parseIso(last);
-    const todayDate = parseIso(today);
-
-    // If last is today -> missed 0
+    const last = days[days.length-1];
     if(last === today) return 0;
-
-    // Count days between last+1 and today-1 that were not completed (effectively gap size)
-    // If you skipped yesterday etc, that's the gap.
-    const diffDays = Math.floor((todayDate - lastDate) / (24*3600*1000)) - 1;
-    return Math.max(0, diffDays);
+    const diff = Math.floor((parseIso(today) - parseIso(last)) / (24*3600*1000)) - 1;
+    return Math.max(0, diff);
   }
 
-  function countCompleted(st, widget){
-    return completedDaysForWidget(st, widget).length;
-  }
+  function totalCompleted(st, emoji){ return completedDays(st, emoji).length; }
 
-  function moneySaved(st, widget){
-    const per = st.settings.perWidget[widget] || {};
+  function moneySaved(st, emoji){
+    const per = st.settings.perEmoji[emoji] || {};
     const daily = Number(per.dailySave) || 0;
-    return daily * countCompleted(st, widget);
+    return daily * totalCompleted(st, emoji);
   }
 
   function yearTotals(st, year){
     const totals = {};
-    st.widgets.forEach(w => totals[w]=0);
+    st.emojis.forEach(x => totals[x.e]=0);
     for(const [day, arr] of Object.entries(st.marks)){
       if(!arr || !arr.length) continue;
       if(day.startsWith(String(year) + "-")){
-        arr.forEach(w => { if(totals[w] !== undefined) totals[w]++; });
+        arr.forEach(e => { if(totals[e] !== undefined) totals[e]++; });
       }
     }
     return totals;
@@ -396,10 +388,15 @@
     const minsNow = now.getHours()*60 + now.getMinutes();
     const minsSet = hh*60 + mm;
 
-    // show if it's after reminder time and today has NO widgets ticked at all
     const today = isoDate(now);
     const any = getMarksForDay(st, today).length > 0;
     return minsNow >= minsSet && !any;
+  }
+
+  function focusLabel(st){
+    const found = st.emojis.find(x => x.e === st.focus);
+    const per = st.settings.perEmoji[st.focus] || {};
+    return (per.label || (found && found.l) || "").trim();
   }
 
   function render(){
@@ -408,50 +405,56 @@
     const selectedDate = parseIso(selectedIso);
     const anchorDate = parseIso(st.monthAnchor);
 
-    // Reminder banner
+    // banner
     const banner = document.getElementById("reminderBanner");
     if(shouldShowReminderBanner(st)){
       const why = (st.settings.globalWhy || "").trim();
       banner.style.display = "block";
-      banner.innerHTML = `<b>Reminder:</b> log your day ✅${why ? `<br><span class="muted">Why: ${escapeHtml(why)}</span>` : ""}`;
+      banner.innerHTML = `<b>Gentle nudge:</b> log your day ✨${why ? `<br><span class="muted">❤️ ${escapeHtml(why)}</span>` : ""}`;
     } else {
       banner.style.display = "none";
       banner.innerHTML = "";
     }
 
-    // Month header
+    // header month
     document.getElementById("monthPill").textContent = monthLabel(anchorDate);
     document.getElementById("monthTitle").textContent = monthLabel(anchorDate);
 
-    // View + focus selects
+    // view
     const viewSelect = document.getElementById("viewSelect");
     viewSelect.value = st.view || "month";
     const isYear = viewSelect.value === "year";
     document.getElementById("calendarWrap").style.display = isYear ? "none" : "block";
     document.getElementById("yearWrap").style.display = isYear ? "block" : "none";
 
+    // labels toggle
+    const labelsToggle = document.getElementById("labelsToggle");
+    labelsToggle.checked = !!st.labelsOn;
+
+    // focus select
     const focusSelect = document.getElementById("focusSelect");
     focusSelect.innerHTML = "";
-    st.widgets.forEach(w=>{
+    st.emojis.forEach(x=>{
       const opt = document.createElement("option");
-      opt.value = w;
-      opt.textContent = w;
+      opt.value = x.e;
+      opt.textContent = st.labelsOn ? `${x.e}  ${x.l || ""}` : x.e;
       focusSelect.appendChild(opt);
     });
-    if(!st.widgets.includes(st.focus)) st.focus = st.widgets[0];
+    if(!st.emojis.some(x=>x.e === st.focus)) st.focus = st.emojis[0].e;
     focusSelect.value = st.focus;
 
-    // Selected title
+    // selected title
     const niceSel = selectedDate.toLocaleDateString(undefined, { weekday:"long", year:"numeric", month:"long", day:"numeric" });
     document.getElementById("selectedTitle").textContent = `Selected: ${niceSel}`;
 
-    // Why preview
-    const focusWhy = ((st.settings.perWidget[st.focus]||{}).why || "").trim();
+    // why preview
     const globalWhy = (st.settings.globalWhy || "").trim();
-    const whyLine = globalWhy || focusWhy ? `Why: ${globalWhy ? escapeHtml(globalWhy) : escapeHtml(focusWhy)}` : "";
-    document.getElementById("whyPreview").innerHTML = whyLine ? whyLine : "";
+    const fl = focusLabel(st);
+    document.getElementById("whyPreview").innerHTML = globalWhy
+      ? `❤️ ${escapeHtml(globalWhy)}`
+      : (fl ? `🏷️ ${escapeHtml(fl)}` : "");
 
-    // DOW labels
+    // DOW
     const dows = document.getElementById("calDows");
     dows.innerHTML = "";
     DOW.forEach(x=>{
@@ -461,7 +464,7 @@
       dows.appendChild(el);
     });
 
-    // Calendar
+    // calendar
     const cal = document.getElementById("calendar");
     cal.innerHTML = "";
     const { cells } = calendarCells(anchorDate);
@@ -479,86 +482,89 @@
       const top = document.createElement("div");
       top.className = "num";
       const marks = getMarksForDay(st,c.iso);
-      top.innerHTML = `<span>${c.date.getDate()}</span><span>${marks.length ? "✓" : ""}</span>`;
+      top.innerHTML = `<span>${c.date.getDate()}</span><span>${marks.length ? "✨" : ""}</span>`;
 
-      const badges = document.createElement("div");
-      badges.className = "badges";
+      const emojis = document.createElement("div");
+      emojis.className = "emojis";
 
-      marks.slice(0,4).forEach(m=>{
+      // show up to 6 emojis on the day
+      marks.slice(0,6).forEach(e=>{
         const b = document.createElement("div");
-        b.className = "badge";
-        b.textContent = m;
-        badges.appendChild(b);
+        b.className = "pill";
+        b.style.color = "#111827";
+        b.style.fontSize = "14px";
+        b.textContent = e;
+        emojis.appendChild(b);
       });
-      if(marks.length > 4){
+      if(marks.length > 6){
         const more = document.createElement("div");
-        more.className = "badge";
-        more.textContent = `+${marks.length - 4}`;
-        badges.appendChild(more);
+        more.className = "pill";
+        more.textContent = `+${marks.length - 6}`;
+        emojis.appendChild(more);
       }
 
       dayEl.appendChild(top);
-      dayEl.appendChild(badges);
+      dayEl.appendChild(emojis);
       cal.appendChild(dayEl);
     });
 
-    // Widgets for selected day
-    const list = document.getElementById("widgetList");
+    // emoji list for selected day
+    const list = document.getElementById("emojiList");
     list.innerHTML = "";
     const selectedMarks = new Set(getMarksForDay(st, selectedIso));
 
-    st.widgets.forEach(w=>{
+    st.emojis.forEach(x=>{
       const btn = document.createElement("button");
-      btn.className = "widgetBtn" + (selectedMarks.has(w) ? " on" : "");
-      btn.textContent = w;
+      btn.className = "chip" + (selectedMarks.has(x.e) ? " on" : "");
+      btn.type = "button";
+      btn.innerHTML = st.labelsOn && (x.l || focusLabel(st))
+        ? `${escapeHtml(x.e)} <span class="label">${escapeHtml((st.settings.perEmoji[x.e]||{}).label || x.l || "")}</span>`
+        : `${escapeHtml(x.e)}`;
       btn.addEventListener("click", ()=>{
         const s = loadState();
-        toggleMark(s, selectedIso, w);
+        toggleMark(s, selectedIso, x.e);
         saveState(s);
         render();
       });
       list.appendChild(btn);
     });
 
-    // Notes
+    // notes
     document.getElementById("notesBox").value = st.notes[selectedIso] || "";
 
-    // Settings UI fill
+    // settings fill
     document.getElementById("globalWhy").value = st.settings.globalWhy || "";
     document.getElementById("reminderTime").value = st.settings.reminderTime || "20:00";
 
-    const per = st.settings.perWidget[st.focus] || {};
+    const per = st.settings.perEmoji[st.focus] || {};
     document.getElementById("dailySave").value = (per.dailySave ?? "");
-    document.getElementById("widgetWhy").value = per.why || "";
+    document.getElementById("emojiLabel").value = (per.label ?? focusLabel(st));
 
-    // Stats for focus widget
-    document.getElementById("streakVal").textContent = String(streakForWidget(st, st.focus));
-    document.getElementById("missedVal").textContent = String(missedDaysSinceLast(st, st.focus));
-    document.getElementById("completedVal").textContent = String(countCompleted(st, st.focus));
+    // stats
+    document.getElementById("streakVal").textContent = "🔥".repeat(Math.min(20, streakFor(st, st.focus))) || "0";
+    document.getElementById("gapVal").textContent = String(gapSinceLast(st, st.focus));
+    document.getElementById("totalVal").textContent = String(totalCompleted(st, st.focus));
     document.getElementById("savedVal").textContent = formatMoneyGBP(moneySaved(st, st.focus));
 
-    // Year totals
+    // year totals
     if(isYear){
       const yr = anchorDate.getFullYear();
       const totals = yearTotals(st, yr);
       const wrap = document.getElementById("yearTotals");
       wrap.innerHTML = "";
       const entries = Object.entries(totals).sort((a,b)=> b[1]-a[1]);
-      entries.forEach(([k,v])=>{
+      entries.forEach(([e,v])=>{
         const row = document.createElement("div");
         row.className = "stat";
         row.style.marginBottom = "8px";
-        row.innerHTML = `<div class="k">${escapeHtml(k)}</div><div class="v">${v}</div>`;
+        const label = (st.settings.perEmoji[e]||{}).label || (st.emojis.find(x=>x.e===e)||{}).l || "";
+        row.innerHTML = `<div class="k">${escapeHtml(e)} ${st.labelsOn && label ? " — " + escapeHtml(label) : ""}</div><div class="v">${v}</div>`;
         wrap.appendChild(row);
       });
     }
   }
 
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-  }
-
-  // Nav buttons
+  // Buttons / handlers
   document.getElementById("prevBtn").addEventListener("click", ()=>{
     const st = loadState();
     const d = parseIso(st.monthAnchor);
@@ -598,30 +604,33 @@
     render();
   });
 
-  // Notes actions
-  document.getElementById("saveNotesBtn").addEventListener("click", ()=>{
+  document.getElementById("labelsToggle").addEventListener("change", (e)=>{
     const st = loadState();
-    const iso = st.selected;
-    st.notes[iso] = document.getElementById("notesBox").value || "";
-    saveState(st);
-    alert("Notes saved ✅");
-    render();
-  });
-  document.getElementById("clearNotesBtn").addEventListener("click", ()=>{
-    const st = loadState();
-    const iso = st.selected;
-    if(!confirm("Clear notes for this day?")) return;
-    delete st.notes[iso];
+    st.labelsOn = !!e.target.checked;
     saveState(st);
     render();
   });
 
-  // Motivation & reminders
+  document.getElementById("saveNotesBtn").addEventListener("click", ()=>{
+    const st = loadState();
+    st.notes[st.selected] = document.getElementById("notesBox").value || "";
+    saveState(st);
+    alert("Saved ✅");
+    render();
+  });
+  document.getElementById("clearNotesBtn").addEventListener("click", ()=>{
+    const st = loadState();
+    if(!confirm("Clear notes for this day?")) return;
+    delete st.notes[st.selected];
+    saveState(st);
+    render();
+  });
+
   document.getElementById("saveWhyBtn").addEventListener("click", ()=>{
     const st = loadState();
     st.settings.globalWhy = document.getElementById("globalWhy").value || "";
     saveState(st);
-    alert("Saved ✅");
+    alert("Saved ❤️");
     render();
   });
 
@@ -629,58 +638,57 @@
     const st = loadState();
     st.settings.reminderTime = document.getElementById("reminderTime").value || "20:00";
     saveState(st);
-    alert("Reminder time saved ✅");
+    alert("Saved ⏰");
     render();
   });
 
-  // Widget settings
-  document.getElementById("saveWidgetSettingsBtn").addEventListener("click", ()=>{
+  document.getElementById("saveEmojiSettingsBtn").addEventListener("click", ()=>{
     const st = loadState();
-    const w = st.focus;
-    st.settings.perWidget[w] = st.settings.perWidget[w] || {};
-    st.settings.perWidget[w].dailySave = Number(document.getElementById("dailySave").value || 0);
-    st.settings.perWidget[w].why = document.getElementById("widgetWhy").value || "";
+    const e = st.focus;
+    st.settings.perEmoji[e] = st.settings.perEmoji[e] || {};
+    st.settings.perEmoji[e].dailySave = Number(document.getElementById("dailySave").value || 0);
+    st.settings.perEmoji[e].label = document.getElementById("emojiLabel").value || "";
     saveState(st);
-    alert("Widget settings saved ✅");
+    alert("Saved ✨");
     render();
   });
 
-  // Custom widget
   document.getElementById("addCustomBtn").addEventListener("click", ()=>{
-    const input = document.getElementById("customInput");
-    const name = (input.value || "").trim();
-    if(!name) return;
+    const emoji = (document.getElementById("customEmoji").value || "").trim();
+    const label = (document.getElementById("customEmojiLabel").value || "").trim();
+    if(!emoji) return;
+
     const st = loadState();
-    if(!st.widgets.includes(name)){
-      st.widgets.push(name);
-      if(!st.focus) st.focus = name;
+    if(!st.emojis.some(x=>x.e === emoji)){
+      st.emojis.push({ e: emoji, l: label });
+      if(!st.focus) st.focus = emoji;
       saveState(st);
     }
-    input.value = "";
+    document.getElementById("customEmoji").value = "";
+    document.getElementById("customEmojiLabel").value = "";
     render();
   });
 
-  // Export / reset
   document.getElementById("exportBtn").addEventListener("click", async ()=>{
     const st = loadState();
     const blob = new Blob([JSON.stringify(st, null, 2)], { type:"application/json" });
-    const file = new File([blob], "quit-day-tracker-export.json", { type:"application/json" });
+    const file = new File([blob], "emoji-quit-tracker-export.json", { type:"application/json" });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: "Quit Day Tracker Export" });
+      await navigator.share({ files: [file], title: "Emoji Quit Tracker Export" });
     } else {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "quit-day-tracker-export.json";
+      a.download = "emoji-quit-tracker-export.json";
       a.click();
       URL.revokeObjectURL(url);
-      alert("Exported. If the download didn’t appear, try again from Safari (not in-app browsers).");
+      alert("Exported. If it didn’t download, open from Safari and try again.");
     }
   });
 
   document.getElementById("resetBtn").addEventListener("click", ()=>{
-    if(!confirm("Reset everything? This clears ticks, notes, and settings.")) return;
+    if(!confirm("Reset everything? This clears emojis, notes, and settings.")) return;
     localStorage.removeItem(STORAGE_KEY);
     location.reload();
   });
